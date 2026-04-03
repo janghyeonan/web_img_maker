@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo In Text</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+KR:wght@400;700&family=Black+Han+Sans&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Do+Hyeon&family=Jua&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      min-height: 100vh;
+      padding-bottom: 250px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .header-left  { display: flex; align-items: center; gap: 16px; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    header h1 { font-size: 18px; font-weight: 700; color: #111; cursor: pointer; user-select: none; }
+    header h1:hover { color: #4f46e5; }
+    .hdivider { width: 1px; height: 28px; background: #e0e0e0; }
+
+    .format-toggle {
+      display: flex;
+      background: #f0f0f0;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .format-toggle button {
+      padding: 6px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .format-toggle button.active {
+      background: #fff;
+      color: #111;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+
+    #upload-btn {
+      padding: 7px 16px;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    #upload-btn:hover { background: #333; }
+    #file-input { display: none; }
+
+    #confirm-btn {
+      padding: 7px 18px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #confirm-btn:hover { background: #4338ca; }
+
+    #delete-img-btn {
+      padding: 7px 14px;
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    #delete-img-btn:hover { background: #b91c1c; }
+
+    #guide-btn {
+      padding: 7px 14px;
+      background: #374151;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    #guide-btn:hover { background: #1f2937; }
+    #guide-btn.active { background: #2563eb; }
+
+    /* ── Workspace ── */
+    .workspace {
+      display: flex;
+      gap: 32px;
+      padding: 32px;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .panel-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #888;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .canvas-wrap {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+      background: #e0e0e0;
+    }
+    #editor-canvas, #preview-img { display: block; }
+
+    .preview-panel { opacity: 0; transition: opacity 0.3s; }
+    .preview-panel.visible { opacity: 1; }
+    #preview-img {
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+    }
+    #download-btn {
+      padding: 8px 20px;
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+    }
+    #download-btn.visible { display: block; }
+    #download-btn:hover { background: #15803d; }
+
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .placeholder svg { opacity: 0.25; }
+    .placeholder p { font-size: 13px; color: #999; }
+
+    /* ── Layer strip ── */
+    #layer-strip-wrap {
+      position: fixed;
+      bottom: 180px;
+      left: 0; right: 0;
+      background: #111;
+      border-top: 1px solid #2a2a2a;
+      display: none;
+      align-items: center;
+      gap: 0;
+      padding: 8px 16px;
+      z-index: 150;
+    }
+    #layer-strip-wrap.visible { display: flex; }
+    #layer-strip-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-right: 12px;
+      white-space: nowrap;
+    }
+    #layer-strip {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    .layer-btn {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      border: 2px solid #333;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      background: #222;
+      padding: 0;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+    .layer-btn:hover { border-color: #888; }
+    .layer-btn.selected { border-color: #4f46e5; }
+    .layer-btn canvas { display: block; width: 100%; height: 100%; }
+    .layer-btn .layer-num {
+      position: absolute;
+      top: 2px; left: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      line-height: 1;
+    }
+
+    /* ── Bottom text bar ── */
+    #bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1a1a1a;
+      border-top: 1px solid #333;
+      display: flex;
+      z-index: 200;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+    }
+
+    .text-panel {
+      flex: 1;
+      padding: 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-right: 1px solid #333;
+      transition: background 0.15s;
+    }
+    .text-panel:last-child { border-right: none; }
+    .text-panel.active { background: #222; }
+
+    .text-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .text-panel-header .type-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.03em;
+    }
+    .title-panel .type-badge { background: #fff; color: #111; font-size: 13px; }
+    .desc-panel  .type-badge { background: #444; color: #ccc; font-size: 10px; }
+    .text-panel-header span.label { font-size: 12px; color: #888; }
+
+    .text-panel textarea {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 13px;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+      height: 64px;
+      width: 100%;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .text-panel textarea:focus { border-color: #555; }
+    .text-panel textarea::placeholder { color: #555; }
+
+    .text-panel-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ctrl-group label { font-size: 11px; color: #777; white-space: nowrap; }
+
+    .ctrl-group select {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      color: #fff;
+      padding: 3px 7px;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+    }
+    .ctrl-group select option { background: #1a1a1a; }
+
+    .ctrl-group input[type="color"] {
+      width: 26px;
+      height: 26px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: none;
+      padding: 0;
+    }
+    .ctrl-group input[type="range"] {
+      width: 80px;
+      accent-color: #4f46e5;
+    }
+    .ctrl-group .size-val {
+      font-size: 11px;
+      color: #aaa;
+      min-width: 20px;
+    }
+
+    /* ── Mobile tab bar (hidden on PC) ── */
+    #mobile-tabs { display: none; }
+
+    /* ── Mobile styles ── */
+    @media (max-width: 767px) {
+      body {
+        padding-bottom: 270px;
+        overscroll-behavior: none; /* 바운스 스크롤 방지 */
+      }
+
+      /* 캔버스 영역 터치 스크롤 완전 차단 */
+      #canvas-scale-wrap,
+      .canvas-wrap,
+      #editor-canvas {
+        touch-action: none;
+      }
+
+      /* Header */
+      header { padding: 10px 14px; gap: 8px; }
+      header h1 { font-size: 15px; }
+      .hdivider { display: none; }
+      .header-left { gap: 10px; }
+      .header-right { gap: 8px; }
+      #upload-btn { padding: 6px 12px; font-size: 12px; }
+      #confirm-btn { padding: 6px 12px; font-size: 12px; }
+      #delete-img-btn { padding: 6px 10px; font-size: 12px; }
+      #guide-btn { padding: 6px 10px; font-size: 12px; }
+      .format-toggle button { padding: 5px 10px; font-size: 12px; }
+
+      /* Workspace: vertical, no side-by-side */
+      .workspace { flex-direction: column; align-items: center; padding: 16px 16px 8px; gap: 16px; }
+      .panel-label { display: none; }
+
+      /* Canvas scale wrapper: JS sets transform */
+      #canvas-scale-wrap { transform-origin: top left; line-height: 0; }
+
+      /* Preview: same width as scaled canvas */
+      #preview-panel { width: 100%; align-items: center; }
+      #canvas-scale-wrap-preview { transform-origin: top left; line-height: 0; }
+      #preview-img { border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.14); display: block; }
+
+      /* Layer strip: higher up to clear taller bottom bar */
+      #layer-strip-wrap { bottom: 210px; padding: 6px 12px; }
+
+      /* Bottom bar: column with tabs */
+      #bottom-bar { flex-direction: column; }
+
+      #mobile-tabs {
+        display: flex;
+        background: #0f0f0f;
+        border-bottom: 1px solid #2a2a2a;
+      }
+      .mob-tab {
+        flex: 1;
+        padding: 11px 0;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: #555;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .mob-tab.active { color: #fff; border-bottom-color: #4f46e5; }
+
+      /* Panels: hidden on mobile unless tab-active */
+      .text-panel { display: none; border-right: none; }
+      .text-panel.mob-active { display: flex; }
+
+      /* Controls: single row, horizontal scroll */
+      .text-panel-controls { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+      .text-panel-controls::-webkit-scrollbar { display: none; }
+
+      /* Textarea: shorter on mobile */
+      .text-panel textarea { height: 52px; font-size: 14px; }
+
+      /* Range slider wider touch target */
+      .ctrl-group input[type="range"] { width: 100px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1 id="app-title" onclick="resetAll()" title="클릭하면 초기화">Photo In Text</h1>
+    <div class="hdivider"></div>
+    <div class="format-toggle">
+      <button id="btn-story" class="active" onclick="setFormat('story')">Story 9:16</button>
+      <button id="btn-feed" onclick="setFormat('feed')">Feed 1:1</button>
+    </div>
+  </div>
+  <div class="header-right">
+    <label id="upload-btn" for="file-input">사진 올리기</label>
+    <input type="file" id="file-input" accept="image/*" onchange="loadImage(event)" />
+    <button id="delete-img-btn" onclick="deleteSelectedImage()" style="display:none">사진 삭제</button>
+    <button id="guide-btn" onclick="toggleGuides()">가이드 OFF</button>
+    <button id="confirm-btn" onclick="renderPreview()">확인 →</button>
+  </div>
+</header>
+
+<div class="workspace">
+  <div class="panel">
+    <span class="panel-label">편집</span>
+    <div id="canvas-scale-wrap">
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="editor-canvas"></canvas>
+        <div class="placeholder" id="placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+          <p>사진을 올려주세요</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel preview-panel" id="preview-panel">
+    <span class="panel-label">미리보기</span>
+    <div id="canvas-scale-wrap-preview">
+      <img id="preview-img" alt="미리보기" />
+    </div>
+    <button id="download-btn" onclick="downloadImage()">저장하기</button>
+  </div>
+</div>
+
+<!-- ── Layer strip ── -->
+<div id="layer-strip-wrap">
+  <span id="layer-strip-label">사진 레이어</span>
+  <div id="layer-strip"></div>
+</div>
+
+<!-- ── Bottom bar: 제목 + 설명 항상 표시 ── -->
+<div id="bottom-bar">
+  <div id="mobile-tabs">
+    <button class="mob-tab active" onclick="switchMobileTab('title')">제목</button>
+    <button class="mob-tab" onclick="switchMobileTab('desc')">설명</button>
+  </div>
+
+  <!-- 제목 패널 -->
+  <div class="text-panel title-panel" id="panel-title">
+    <div class="text-panel-header">
+      <span class="type-badge">T</span>
+      <span class="label">제목</span>
+    </div>
+    <textarea id="title-input" placeholder="제목을 입력하세요" oninput="onTitleInput()"></textarea>
+    <div class="text-panel-controls">
+      <div class="ctrl-group">
+        <label>폰트</label>
+        <select id="title-font" onchange="applyTitleStyle()">
+          <option value="Noto Sans KR">Noto Sans KR</option>
+          <option value="Noto Serif KR">Noto Serif KR</option>
+          <option value="Black Han Sans">Black Han Sans</option>
+          <option value="Nanum Gothic">나눔고딕</option>
+          <option value="Nanum Myeongjo">나눔명조</option>
+          <option value="Do Hyeon">도현</option>
+          <option value="Jua">주아</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>색상</label>
+        <input type="color" id="title-color" value="#ffffff" oninput="applyTitleStyle()" />
+      </div>
+      <div class="ctrl-group">
+        <label>크기</label>
+        <input type="range" id="title-size" min="16" max="120" value="42" oninput="applyTitleStyle(); this.nextElementSibling.textContent = this.value" />
+        <span class="size-val">42</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 설명 패널 -->
+  <div class="text-panel desc-panel" id="panel-desc">
+    <div class="text-panel-header">
+      <span class="type-badge">t</span>
+      <span class="label">설명</span>
+    </div>
+    <textarea id="desc-input" placeholder="설명을 입력하세요" oninput="onDescInput()"></textarea>
+    <div class="text-panel-controls">
+      <div class="ctrl-group">
+        <label>폰트</label>
+        <select id="desc-font" onchange="applyDescStyle()">
+          <option value="Noto Sans KR">Noto Sans KR</option>
+          <option value="Noto Serif KR">Noto Serif KR</option>
+          <option value="Black Han Sans">Black Han Sans</option>
+          <option value="Nanum Gothic">나눔고딕</option>
+          <option value="Nanum Myeongjo">나눔명조</option>
+          <option value="Do Hyeon">도현</option>
+          <option value="Jua">주아</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>색상</label>
+        <input type="color" id="desc-color" value="#ffffff" oninput="applyDescStyle()" />
+      </div>
+      <div class="ctrl-group">
+        <label>크기</label>
+        <input type="range" id="desc-size" min="10" max="80" value="22" oninput="applyDescStyle(); this.nextElementSibling.textContent = this.value" />
+        <span class="size-val">22</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ─── State ───────────────────────────────────────────────
+  let format = 'story';
+  let canvas;
+  let titleObj  = null;
+  let descObj   = null;
+  let imageObjs = [];
+  let guideObjs = [];
+  let guidesVisible = false;
+  let autoSaveTimer = null;
+  let isRestoringState = false;
+  let mobileViewScale = 1;
+  let touchGesture = null;
+
+  const FORMATS = {
+    story: { w: 360, h: 640 },
+    feed:  { w: 500, h: 500 },
+  };
+  const STORAGE_KEY = 'photointext.editorState.v1';
+
+  function updateFormatToggleUI() {
+    document.getElementById('btn-story').classList.toggle('active', format === 'story');
+    document.getElementById('btn-feed').classList.toggle('active', format === 'feed');
+  }
+
+  function updateGuideButton() {
+    const btn = document.getElementById('guide-btn');
+    btn.classList.toggle('active', guidesVisible);
+    btn.textContent = guidesVisible ? '가이드 ON' : '가이드 OFF';
+  }
+
+  function setSizeControlLabels() {
+    document.getElementById('title-size').nextElementSibling.textContent = document.getElementById('title-size').value;
+    document.getElementById('desc-size').nextElementSibling.textContent = document.getElementById('desc-size').value;
+  }
+
+  function getUiState() {
+    return {
+      titleInput: document.getElementById('title-input').value,
+      descInput: document.getElementById('desc-input').value,
+      titleFont: document.getElementById('title-font').value,
+      descFont: document.getElementById('desc-font').value,
+      titleColor: document.getElementById('title-color').value,
+      descColor: document.getElementById('desc-color').value,
+      titleSize: document.getElementById('title-size').value,
+      descSize: document.getElementById('desc-size').value,
+      guidesVisible,
+    };
+  }
+
+  function applyUiState(ui = {}) {
+    document.getElementById('title-input').value = ui.titleInput ?? '';
+    document.getElementById('desc-input').value = ui.descInput ?? '';
+    if (ui.titleFont) document.getElementById('title-font').value = ui.titleFont;
+    if (ui.descFont) document.getElementById('desc-font').value = ui.descFont;
+    if (ui.titleColor) document.getElementById('title-color').value = ui.titleColor;
+    if (ui.descColor) document.getElementById('desc-color').value = ui.descColor;
+    if (ui.titleSize) document.getElementById('title-size').value = ui.titleSize;
+    if (ui.descSize) document.getElementById('desc-size').value = ui.descSize;
+    guidesVisible = Boolean(ui.guidesVisible);
+    updateGuideButton();
+    setSizeControlLabels();
+  }
+
+  function scheduleAutoSave() {
+    if (isRestoringState) return;
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(saveEditorState, 250);
+  }
+
+  function saveEditorState() {
+    if (!canvas || isRestoringState) return;
+    try {
+      const state = {
+        version: 1,
+        savedAt: Date.now(),
+        format,
+        ui: getUiState(),
+        canvas: canvas.toJSON(['contentRole']),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (err) {
+      console.warn('Failed to save editor state', err);
+    }
+  }
+
+  function syncObjectRefs() {
+    titleObj = null;
+    descObj = null;
+    imageObjs = [];
+
+    canvas.getObjects().forEach(obj => {
+      if (obj.type === 'image') imageObjs.push(obj);
+      if (obj.contentRole === 'title') titleObj = obj;
+      if (obj.contentRole === 'desc') descObj = obj;
+    });
+  }
+
+  function restoreEditorState() {
+    let parsed;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      parsed = JSON.parse(raw);
+      if (!parsed || !parsed.canvas || !FORMATS[parsed.format]) return false;
+    } catch (err) {
+      console.warn('Failed to restore editor state', err);
+      localStorage.removeItem(STORAGE_KEY);
+      return false;
+    }
+
+    isRestoringState = true;
+    format = parsed.format;
+    updateFormatToggleUI();
+    applyUiState(parsed.ui || {});
+    initCanvas();
+
+    canvas.loadFromJSON(parsed.canvas, () => {
+      syncObjectRefs();
+      rebuildGuides();
+      bringTextToFront();
+      clearHighlight();
+      renderLayerPanel();
+      document.getElementById('placeholder').style.display = imageObjs.length ? 'none' : 'flex';
+      hidePreview();
+      scaleCanvasForMobile();
+      if (window.innerWidth < 768) switchMobileTab('title');
+      canvas.requestRenderAll();
+      isRestoringState = false;
+    });
+    return true;
+  }
+
+  // ─── Init canvas ─────────────────────────────────────────
+  function initCanvas() {
+    const { w, h } = FORMATS[format];
+    if (canvas) canvas.dispose();
+
+    canvas = new fabric.Canvas('editor-canvas', {
+      width: w,
+      height: h,
+      backgroundColor: '#cccccc',
+      selection: true,
+    });
+
+    canvas.on('selection:created', e => highlightPanel(e.selected[0]));
+    canvas.on('selection:updated', e => highlightPanel(e.selected[0]));
+    canvas.on('selection:cleared',  () => clearHighlight());
+    canvas.on('object:modified', () => {
+      bringTextToFront();
+      renderLayerPanel();
+      scheduleAutoSave();
+    });
+    canvas.on('object:added', () => {
+      if (isRestoringState) return;
+      syncObjectRefs();
+      renderLayerPanel();
+      scheduleAutoSave();
+    });
+    canvas.on('object:removed', () => {
+      if (isRestoringState) return;
+      syncObjectRefs();
+      renderLayerPanel();
+      scheduleAutoSave();
+    });
+
+    titleObj  = null;
+    descObj   = null;
+    imageObjs = [];
+    guideObjs = [];
+    renderLayerPanel();
+    setupTouchGestures();
+    rebuildGuides();
+    scaleCanvasForMobile();
+  }
+
+  function highlightPanel(obj) {
+    document.getElementById('panel-title').classList.toggle('active', obj === titleObj);
+    document.getElementById('panel-desc').classList.toggle('active',  obj === descObj);
+    document.getElementById('delete-img-btn').style.display =
+      (obj && obj.type === 'image') ? 'block' : 'none';
+
+    // 레이어 버튼 하이라이트
+    document.querySelectorAll('.layer-btn').forEach(btn => {
+      btn.classList.toggle('selected', btn._imgObj === obj);
+    });
+  }
+  function clearHighlight() {
+    document.getElementById('panel-title').classList.remove('active');
+    document.getElementById('panel-desc').classList.remove('active');
+    document.getElementById('delete-img-btn').style.display = 'none';
+    document.querySelectorAll('.layer-btn').forEach(btn => btn.classList.remove('selected'));
+  }
+
+  function deleteSelectedImage() {
+    const obj = canvas.getActiveObject();
+    if (obj && obj.type === 'image') {
+      const idx = imageObjs.indexOf(obj);
+      if (idx !== -1) imageObjs.splice(idx, 1);
+      canvas.remove(obj);
+      canvas.discardActiveObject();
+      canvas.renderAll();
+      renderLayerPanel();
+      scheduleAutoSave();
+    }
+  }
+
+  // ─── Format switch ────────────────────────────────────────
+  function setFormat(f) {
+    format = f;
+    updateFormatToggleUI();
+    initCanvas();
+    document.getElementById('placeholder').style.display = 'flex';
+    // clear inputs
+    document.getElementById('title-input').value = '';
+    document.getElementById('desc-input').value  = '';
+    hidePreview();
+    scheduleAutoSave();
+  }
+
+  // ─── 레이어 패널 렌더링 ───────────────────────────────────
+  function renderLayerPanel() {
+    const wrap  = document.getElementById('layer-strip-wrap');
+    const strip = document.getElementById('layer-strip');
+    strip.innerHTML = '';
+
+    if (imageObjs.length === 0) { wrap.classList.remove('visible'); return; }
+    wrap.classList.add('visible');
+
+    // 위에 있는 순서대로 (배열 역순 = 최상위 먼저)
+    [...imageObjs].reverse().forEach((img, i) => {
+      const stackNum = i + 1; // 1이 최상위
+
+      const btn = document.createElement('button');
+      btn.className = 'layer-btn';
+      btn._imgObj = img;
+
+      // 썸네일
+      const tc  = document.createElement('canvas');
+      tc.width  = 48;
+      tc.height = 48;
+      const ctx = tc.getContext('2d');
+      const el  = img.getElement();
+      const s   = Math.min(48 / el.naturalWidth, 48 / el.naturalHeight);
+      const tw  = el.naturalWidth  * s;
+      const th  = el.naturalHeight * s;
+      ctx.fillStyle = '#222';
+      ctx.fillRect(0, 0, 48, 48);
+      ctx.drawImage(el, (48 - tw) / 2, (48 - th) / 2, tw, th);
+
+      const num = document.createElement('span');
+      num.className = 'layer-num';
+      num.textContent = stackNum;
+
+      btn.appendChild(tc);
+      btn.appendChild(num);
+
+      btn.onclick = () => selectAndLift(img);
+      strip.appendChild(btn);
+    });
+
+    // 현재 선택 상태 반영
+    const active = canvas.getActiveObject();
+    document.querySelectorAll('.layer-btn').forEach(btn => {
+      btn.classList.toggle('selected', btn._imgObj === active);
+    });
+  }
+
+  // 해당 이미지를 이미지 스택 최상위로 + 선택
+  function selectAndLift(img) {
+    const idx = imageObjs.indexOf(img);
+    if (idx !== -1) {
+      imageObjs.splice(idx, 1);
+      imageObjs.push(img);
+    }
+    canvas.bringToFront(img);
+    bringTextToFront();
+    canvas.setActiveObject(img);
+    canvas.renderAll();
+    renderLayerPanel();
+    scheduleAutoSave();
+  }
+
+  // ─── 텍스트를 항상 최상위로 ───────────────────────────────
+  function bringTextToFront() {
+    if (titleObj) canvas.bringToFront(titleObj);
+    if (descObj)  canvas.bringToFront(descObj);
+    bringGuidesToFront();
+  }
+
+  function bringGuidesToFront() {
+    guideObjs.forEach(obj => canvas.bringToFront(obj));
+  }
+
+  function rebuildGuides() {
+    if (!canvas) return;
+    guideObjs.forEach(obj => canvas.remove(obj));
+    guideObjs = [];
+
+    if (!guidesVisible) return;
+
+    const { w, h } = FORMATS[format];
+    const centerV = new fabric.Line([w / 2, 0, w / 2, h], {
+      stroke: 'rgba(37,99,235,0.9)',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      excludeFromExport: true,
+    });
+    const centerH = new fabric.Line([0, h / 2, w, h / 2], {
+      stroke: 'rgba(37,99,235,0.9)',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      excludeFromExport: true,
+    });
+
+    const marginX = Math.round(w * 0.08);
+    const marginY = Math.round(h * 0.08);
+    const safeArea = new fabric.Rect({
+      left: marginX,
+      top: marginY,
+      width: w - marginX * 2,
+      height: h - marginY * 2,
+      fill: 'transparent',
+      stroke: 'rgba(16,185,129,0.85)',
+      strokeWidth: 1,
+      strokeDashArray: [6, 5],
+      selectable: false,
+      evented: false,
+      excludeFromExport: true,
+    });
+
+    guideObjs = [safeArea, centerV, centerH];
+    guideObjs.forEach(obj => canvas.add(obj));
+    bringGuidesToFront();
+    canvas.requestRenderAll();
+  }
+
+  function toggleGuides() {
+    guidesVisible = !guidesVisible;
+    updateGuideButton();
+    rebuildGuides();
+    scheduleAutoSave();
+  }
+
+  function exportCanvasDataURL() {
+    canvas.discardActiveObject();
+
+    if (!guidesVisible || guideObjs.length === 0) {
+      canvas.renderAll();
+      return canvas.toDataURL({ format: 'png', multiplier: 2 });
+    }
+
+    guideObjs.forEach(obj => obj.set('visible', false));
+    canvas.renderAll();
+    const dataURL = canvas.toDataURL({ format: 'png', multiplier: 2 });
+    guideObjs.forEach(obj => obj.set('visible', true));
+    canvas.renderAll();
+    return dataURL;
+  }
+
+  // ─── 사진 한 장씩 추가 (쌓기) ────────────────────────────
+  function loadImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      fabric.Image.fromURL(e.target.result, (img) => {
+        const { w, h } = FORMATS[format];
+        // 캔버스 안에 딱 맞게 축소 (전체 보이도록)
+        const scale = Math.min(w / img.width, h / img.height);
+        img.set({
+          scaleX: scale, scaleY: scale,
+          left: (w - img.width  * scale) / 2,
+          top:  (h - img.height * scale) / 2,
+          selectable: true, evented: true,
+        });
+        imageObjs.push(img);
+        canvas.add(img);
+        bringTextToFront();
+        canvas.renderAll();
+        renderLayerPanel();
+        document.getElementById('placeholder').style.display = 'none';
+        hidePreview();
+        scheduleAutoSave();
+      });
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  }
+
+  function getTouchDistance(t1, t2) {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  }
+
+  function getTouchAngle(t1, t2) {
+    return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+  }
+
+  function getTouchCenter(t1, t2) {
+    return {
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2,
+    };
+  }
+
+  function getAngleDelta(current, start) {
+    let delta = current - start;
+    while (delta > 180) delta -= 360;
+    while (delta < -180) delta += 360;
+    return delta;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function setupTouchGestures() {
+    if (!canvas || !canvas.upperCanvasEl) return;
+    const touchTarget = canvas.upperCanvasEl;
+
+    touchTarget.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 2) return;
+      const active = canvas.getActiveObject();
+      if (!active || active.type !== 'image') return;
+
+      const [t1, t2] = e.touches;
+      const center = getTouchCenter(t1, t2);
+      touchGesture = {
+        target: active,
+        startScaleX: active.scaleX || 1,
+        startScaleY: active.scaleY || 1,
+        startAngle: active.angle || 0,
+        startDistance: Math.max(getTouchDistance(t1, t2), 1),
+        startTouchAngle: getTouchAngle(t1, t2),
+        startTouchCenter: center,
+        startObjectCenter: active.getCenterPoint(),
+      };
+      e.preventDefault();
+    }, { passive: false });
+
+    touchTarget.addEventListener('touchmove', (e) => {
+      if (!touchGesture || e.touches.length < 2) return;
+      const [t1, t2] = e.touches;
+      const distance = Math.max(getTouchDistance(t1, t2), 1);
+      const ratio = distance / touchGesture.startDistance;
+      const angleDelta = getAngleDelta(getTouchAngle(t1, t2), touchGesture.startTouchAngle);
+      const center = getTouchCenter(t1, t2);
+      const moveX = (center.x - touchGesture.startTouchCenter.x) / mobileViewScale;
+      const moveY = (center.y - touchGesture.startTouchCenter.y) / mobileViewScale;
+
+      const target = touchGesture.target;
+      const nextCenter = new fabric.Point(
+        touchGesture.startObjectCenter.x + moveX,
+        touchGesture.startObjectCenter.y + moveY
+      );
+
+      target.set({
+        scaleX: clamp(touchGesture.startScaleX * ratio, 0.05, 20),
+        scaleY: clamp(touchGesture.startScaleY * ratio, 0.05, 20),
+        angle: touchGesture.startAngle + angleDelta,
+      });
+      target.setPositionByOrigin(nextCenter, 'center', 'center');
+      target.setCoords();
+      canvas.setActiveObject(target);
+      bringTextToFront();
+      canvas.requestRenderAll();
+      e.preventDefault();
+    }, { passive: false });
+
+    touchTarget.addEventListener('touchend', (e) => {
+      if (!touchGesture) return;
+      if (e.touches.length >= 2) return;
+      touchGesture = null;
+      canvas.requestRenderAll();
+      scheduleAutoSave();
+    }, { passive: false });
+
+    touchTarget.addEventListener('touchcancel', () => {
+      if (!touchGesture) return;
+      touchGesture = null;
+      canvas.requestRenderAll();
+      scheduleAutoSave();
+    }, { passive: false });
+  }
+
+  // ─── HTML 파싱 ───────────────────────────────────────────
+  // 지원 태그: <hr>, <br>, 나머지는 strip
+  function parseHtml(html) {
+    const segments = [];
+    // <br> → 줄바꿈으로 치환 후 <hr> 기준으로 분리
+    const normalized = html.replace(/<br\s*\/?>/gi, '\n');
+    normalized.split(/<hr\s*\/?>/gi).forEach((part, i, arr) => {
+      const text = part.replace(/<[^>]+>/g, ''); // 나머지 태그 strip
+      if (text) segments.push({ type: 'text', content: text });
+      if (i < arr.length - 1) segments.push({ type: 'hr' });
+    });
+    return segments;
+  }
+
+  // ─── 콘텐츠 그룹 빌드 ────────────────────────────────────
+  function buildContentGroup(html, { fontSize, fontWeight, fontFamily, fill, blockWidth }) {
+    const segments = parseHtml(html);
+    const hasContent = segments.some(s => s.type === 'hr' || (s.type === 'text' && s.content.trim()));
+    if (!hasContent) return null;
+
+    const objects = [];
+    let currentY = 0;
+    const gap = 10;
+
+    segments.forEach(seg => {
+      if (seg.type === 'text' && seg.content.trim()) {
+        const tb = new fabric.Textbox(seg.content, {
+          left: 0, top: currentY,
+          width: blockWidth,
+          fontSize, fontWeight, fontFamily, fill,
+          textAlign: 'left',
+          splitByGrapheme: false,
+          originX: 'left', originY: 'top',
+          selectable: false, evented: false,
+          hasControls: false, hasBorders: false,
+        });
+        objects.push(tb);
+        currentY += tb.height + gap;
+      } else if (seg.type === 'hr') {
+        currentY += 4;
+        const line = new fabric.Line([0, currentY, blockWidth, currentY], {
+          stroke: fill,
+          strokeWidth: 1.5,
+          opacity: 0.55,
+          selectable: false, evented: false,
+          hasControls: false, hasBorders: false,
+        });
+        objects.push(line);
+        currentY += 18;
+      }
+    });
+
+    if (objects.length === 0) return null;
+
+    const group = new fabric.Group(objects, {
+      originX: 'left',
+      originY: 'top',
+      selectable: true,
+      evented: true,
+      shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.5)', blur: 8, offsetX: 0, offsetY: 2 }),
+    });
+    return group;
+  }
+
+  // ─── 제목/설명 재빌드 ─────────────────────────────────────
+  function rebuildContent(type) {
+    const isTitle = type === 'title';
+    const html     = document.getElementById(isTitle ? 'title-input' : 'desc-input').value;
+    const font     = document.getElementById(isTitle ? 'title-font'  : 'desc-font').value;
+    const fill     = document.getElementById(isTitle ? 'title-color' : 'desc-color').value;
+    const fontSize = parseInt(document.getElementById(isTitle ? 'title-size' : 'desc-size').value);
+    const { w, h } = FORMATS[format];
+
+    // 현재 위치 저장
+    const current = isTitle ? titleObj : descObj;
+    const savedLeft = current ? current.left : w * 0.09;
+    const savedTop  = current ? current.top  : (isTitle ? h * (4/5) - 80 : h * (4/5));
+
+    if (current) { canvas.remove(current); }
+
+    const group = buildContentGroup(html, {
+      fontSize,
+      fontWeight: isTitle ? '700' : '400',
+      fontFamily: font,
+      fill,
+      blockWidth: w * 0.82,
+    });
+
+    if (isTitle) titleObj = group;
+    else         descObj  = group;
+
+    if (group) {
+      group.set({
+        left: savedLeft,
+        top: savedTop,
+        contentRole: isTitle ? 'title' : 'desc',
+      });
+      canvas.add(group);
+      bringTextToFront();
+    }
+    canvas.renderAll();
+    scheduleAutoSave();
+  }
+
+  // ─── Input handlers ───────────────────────────────────────
+  function onTitleInput() { rebuildContent('title'); }
+  function onDescInput()  { rebuildContent('desc');  }
+
+  // ─── Style apply ─────────────────────────────────────────
+  function applyTitleStyle() { rebuildContent('title'); }
+  function applyDescStyle()  { rebuildContent('desc');  }
+
+  // ─── Preview ──────────────────────────────────────────────
+  function renderPreview() {
+    const dataURL = exportCanvasDataURL();
+    const img = document.getElementById('preview-img');
+    const { w, h } = FORMATS[format];
+    img.style.width  = w + 'px';
+    img.style.height = h + 'px';
+    img.src = dataURL;
+
+    document.getElementById('preview-panel').classList.add('visible');
+    document.getElementById('download-btn').classList.add('visible');
+  }
+
+  function hidePreview() {
+    document.getElementById('preview-panel').classList.remove('visible');
+    document.getElementById('download-btn').classList.remove('visible');
+  }
+
+  // ─── Download ─────────────────────────────────────────────
+  function downloadImage() {
+    const dataURL = exportCanvasDataURL();
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = `photointext_${format}_${Date.now()}.png`;
+    a.click();
+  }
+
+  // ─── 키보드 삭제 ─────────────────────────────────────────
+  function isTypingElement(el) {
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+
+    const tag = el.tagName;
+    if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (tag !== 'INPUT') return false;
+
+    const type = (el.type || 'text').toLowerCase();
+    const nonTypingTypes = ['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'image'];
+    return !nonTypingTypes.includes(type);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+
+    // 입력 필드 포커스 상태에서는 캔버스 삭제 단축키를 무시
+    if (isTypingElement(e.target) || isTypingElement(document.activeElement)) return;
+
+    const active = canvas.getActiveObject();
+    if (!active || active.isEditing) return;
+    if (active.type === 'image') {
+      e.preventDefault();
+      deleteSelectedImage();
+    }
+  });
+
+  // ─── 모바일 캔버스 스케일 ────────────────────────────────
+  function scaleCanvasForMobile() {
+    const editorWrap  = document.getElementById('canvas-scale-wrap');
+    const previewWrap = document.getElementById('canvas-scale-wrap-preview');
+    const { w, h } = FORMATS[format];
+
+    if (window.innerWidth >= 768) {
+      mobileViewScale = 1;
+      editorWrap.style.cssText  = '';
+      previewWrap.style.cssText = '';
+      return;
+    }
+    const available = window.innerWidth - 32;
+    const scale = Math.min(1, available / w);
+    mobileViewScale = scale;
+    const scaledW = Math.round(w * scale);
+    const scaledH = Math.round(h * scale);
+
+    editorWrap.style.transform       = `scale(${scale})`;
+    editorWrap.style.transformOrigin = 'top left';
+    editorWrap.style.width           = scaledW + 'px';
+    editorWrap.style.height          = scaledH + 'px';
+
+    // 미리보기도 같은 스케일
+    const previewImg = document.getElementById('preview-img');
+    previewImg.style.width  = scaledW + 'px';
+    previewImg.style.height = scaledH + 'px';
+    previewWrap.style.width  = scaledW + 'px';
+    previewWrap.style.height = scaledH + 'px';
+  }
+
+  // ─── 모바일 탭 전환 ───────────────────────────────────────
+  function switchMobileTab(type) {
+    document.querySelectorAll('.mob-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.includes(type === 'title' ? '제목' : '설명'));
+    });
+    document.getElementById('panel-title').classList.toggle('mob-active', type === 'title');
+    document.getElementById('panel-desc').classList.toggle('mob-active',  type === 'desc');
+  }
+
+  // ─── 초기화 ──────────────────────────────────────────────
+  function resetAll() {
+    if (!confirm('모든 내용을 초기화할까요?')) return;
+    format = 'story';
+    guidesVisible = false;
+    updateFormatToggleUI();
+    updateGuideButton();
+    document.getElementById('title-input').value = '';
+    document.getElementById('desc-input').value  = '';
+    document.getElementById('delete-img-btn').style.display = 'none';
+    hidePreview();
+    document.getElementById('placeholder').style.display = 'flex';
+    initCanvas();
+    scaleCanvasForMobile();
+    if (window.innerWidth < 768) switchMobileTab('title');
+    scheduleAutoSave();
+  }
+
+  // ─── Bootstrap ───────────────────────────────────────────
+  updateFormatToggleUI();
+  updateGuideButton();
+  setSizeControlLabels();
+
+  if (!restoreEditorState()) {
+    initCanvas();
+    scaleCanvasForMobile();
+    if (window.innerWidth < 768) switchMobileTab('title');
+  }
+
+  window.addEventListener('beforeunload', () => saveEditorState());
+  window.addEventListener('resize', () => { scaleCanvasForMobile(); });
+
+  // 모바일: 캔버스 위 터치 드래그 시 페이지 스크롤 방지
+  document.getElementById('canvas-scale-wrap').addEventListener('touchmove', e => {
+    e.preventDefault();
+  }, { passive: false });
+</script>
+</body>
+</html>

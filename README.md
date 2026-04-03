@@ -108,3 +108,11 @@ python3 -m http.server 4173
 ---
 
 필요하면 다음 단계로 `README`를 배포/운영 관점(버전 관리 규칙, 배포 URL, 변경 이력)까지 확장할 수 있습니다.
+
+## 8. GitHub Pages
+
+- 배포 URL: `https://janghyeonan.github.io/web_img_maker/`
+- 직접 파일 URL: `https://janghyeonan.github.io/web_img_maker/Photo%20In%20Text.html`
+
+> 참고: GitHub Pages 설정이 비활성화되어 있으면 404가 보일 수 있습니다.
+
