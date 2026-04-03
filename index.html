@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Photo In Text</title>
+  <title>Photo In Text Mobile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+KR:wght@400;700&family=Black+Han+Sans&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Do+Hyeon&family=Jua&display=swap" rel="stylesheet" />
@@ -140,6 +140,17 @@
 
     .preview-panel { opacity: 0; transition: opacity 0.3s; }
     .preview-panel.visible { opacity: 1; }
+    .preview-topbar { display: none; }
+    #preview-close-btn {
+      border: none;
+      background: #1f2937;
+      color: #fff;
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
     #preview-img {
       border-radius: 12px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.14);
@@ -336,8 +347,11 @@
     /* ── Mobile styles ── */
     @media (max-width: 767px) {
       body {
-        padding-bottom: 270px;
+        padding-bottom: calc(270px + env(safe-area-inset-bottom));
         overscroll-behavior: none; /* 바운스 스크롤 방지 */
+      }
+      body.mobile-editor-collapsed {
+        padding-bottom: calc(74px + env(safe-area-inset-bottom));
       }
 
       /* 캔버스 영역 터치 스크롤 완전 차단 */
@@ -375,10 +389,14 @@
       #layer-strip-wrap { bottom: 210px; padding: 6px 12px; }
 
       /* Bottom bar: column with tabs */
-      #bottom-bar { flex-direction: column; }
+      #bottom-bar {
+        flex-direction: column;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
 
       #mobile-tabs {
         display: flex;
+        align-items: stretch;
         background: #0f0f0f;
         border-bottom: 1px solid #2a2a2a;
       }
@@ -394,7 +412,25 @@
         cursor: pointer;
         transition: all 0.15s;
       }
-      .mob-tab.active { color: #fff; border-bottom-color: #4f46e5; }
+    .mob-tab.active { color: #fff; border-bottom-color: #4f46e5; }
+    .mob-tab-utility {
+      flex: 0 0 auto;
+      padding: 11px 12px;
+      color: #cbd5e1;
+      border-left: 1px solid #2a2a2a;
+      border-bottom: 2px solid transparent;
+      font-size: 12px;
+      font-weight: 700;
+      background: transparent;
+      cursor: pointer;
+    }
+      .mob-tab-collapse {
+        flex: 0 0 auto;
+        padding: 11px 12px;
+        color: #bbb;
+        border-left: 1px solid #2a2a2a;
+      }
+      #bottom-bar.mobile-collapsed .text-panel { display: none !important; }
 
       /* Panels: hidden on mobile unless tab-active */
       .text-panel { display: none; border-right: none; }
@@ -410,9 +446,212 @@
       /* Range slider wider touch target */
       .ctrl-group input[type="range"] { width: 100px; }
     }
+
+    /* ── Mobile-only override for m_index.hmtl ── */
+    body.mobile-only {
+      --mobile-tabs-height: 48px;
+      background:
+        radial-gradient(800px 420px at 20% -10%, rgba(79, 70, 229, 0.22), transparent 55%),
+        radial-gradient(700px 400px at 100% 0%, rgba(22, 163, 74, 0.16), transparent 55%),
+        #0b0f14;
+      color: #e5e7eb;
+      padding-bottom: calc(300px + env(safe-area-inset-bottom));
+      overscroll-behavior: none;
+    }
+    body.mobile-only.mobile-editor-collapsed {
+      padding-bottom: calc(82px + env(safe-area-inset-bottom));
+    }
+    body.mobile-only header {
+      position: sticky;
+      top: 0;
+      z-index: 350;
+      padding: 10px 12px;
+      gap: 8px;
+      flex-direction: column;
+      align-items: stretch;
+      border-bottom: 1px solid #1f2937;
+      background: rgba(11, 15, 20, 0.92);
+      backdrop-filter: blur(10px);
+    }
+    body.mobile-only header h1 { color: #f9fafb; font-size: 16px; }
+    body.mobile-only .hdivider { display: none; }
+    body.mobile-only .header-left,
+    body.mobile-only .header-right {
+      width: 100%;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    body.mobile-only .format-toggle { background: #1f2937; }
+    body.mobile-only .format-toggle button { color: #9ca3af; }
+    body.mobile-only .format-toggle button.active {
+      background: #111827;
+      color: #f9fafb;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06) inset;
+    }
+    body.mobile-only #upload-btn,
+    body.mobile-only #confirm-btn,
+    body.mobile-only #delete-img-btn,
+    body.mobile-only #guide-btn {
+      padding: 8px 12px;
+      font-size: 12px;
+      border-radius: 10px;
+    }
+    body.mobile-only .workspace {
+      display: block;
+      padding: 14px 12px 8px;
+    }
+    body.mobile-only .panel { width: 100%; }
+    body.mobile-only .panel-label { display: none; }
+    body.mobile-only #preview-panel { width: 100%; margin-top: 12px; align-items: center; }
+    body.mobile-only .preview-topbar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    body.mobile-only #preview-close-btn { padding: 8px 12px; font-size: 12px; border-radius: 10px; }
+    body.mobile-only #layer-strip-wrap {
+      bottom: calc(238px + env(safe-area-inset-bottom));
+      padding: 7px 10px;
+      background: rgba(12, 16, 22, 0.95);
+      border-top-color: #1f2937;
+    }
+    body.mobile-only #bottom-bar {
+      flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom);
+      background: rgba(10, 14, 20, 0.94);
+      border-top-color: #1f2937;
+      backdrop-filter: blur(10px);
+    }
+    body.mobile-only #mobile-tabs { display: flex; align-items: stretch; }
+    body.mobile-only #mobile-tabs { min-height: var(--mobile-tabs-height); }
+    body.mobile-only .mob-tab {
+      display: block;
+      flex: 1;
+      padding: 12px 0;
+      color: #6b7280;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    body.mobile-only .mob-tab.active { color: #f9fafb; border-bottom-color: #4f46e5; }
+    body.mobile-only .mob-tab-utility {
+      color: #dbeafe;
+      border-left: 1px solid #1f2937;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    body.mobile-only .mob-tab-collapse {
+      flex: 0 0 auto;
+      padding: 12px 14px;
+      color: #cbd5e1;
+      border-left: 1px solid #1f2937;
+    }
+    body.mobile-only .text-panel {
+      display: none;
+      border-right: none;
+      padding: 12px;
+      gap: 8px;
+      background: transparent;
+    }
+    body.mobile-only .text-panel.mob-active { display: flex; }
+    body.mobile-only #bottom-bar.mobile-collapsed .text-panel { display: none !important; }
+    body.mobile-only.mobile-editor-collapsed #layer-strip-wrap {
+      bottom: calc(var(--mobile-tabs-height) + env(safe-area-inset-bottom));
+      border-top-color: #374151;
+    }
+    body.mobile-only.mobile-preview-mode header,
+    body.mobile-only.mobile-preview-mode #bottom-bar,
+    body.mobile-only.mobile-preview-mode #layer-strip-wrap {
+      display: none !important;
+    }
+    body.mobile-only.mobile-preview-mode {
+      padding-bottom: 0;
+      overflow: hidden;
+    }
+    body.mobile-only.mobile-preview-mode .workspace {
+      padding: 0;
+      margin: 0;
+    }
+    body.mobile-only.mobile-preview-mode #preview-panel {
+      position: fixed;
+      inset: 0;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 500;
+      opacity: 1;
+      background: rgba(8, 12, 18, 0.98);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 14px 12px calc(86px + env(safe-area-inset-bottom));
+      overflow-y: auto;
+      gap: 10px;
+    }
+    body.mobile-only.mobile-preview-mode #canvas-scale-wrap-preview {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    body.mobile-only.mobile-preview-mode #preview-img {
+      width: min(100%, 440px) !important;
+      height: auto !important;
+      max-height: calc(100vh - 180px - env(safe-area-inset-bottom));
+      object-fit: contain;
+      border-radius: 14px;
+    }
+    body.mobile-only.mobile-preview-mode #download-btn.visible {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      z-index: 520;
+      padding: 12px 16px;
+      font-size: 15px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    body.mobile-only .text-panel textarea {
+      height: 84px;
+      font-size: 15px;
+      border-radius: 10px;
+      border-color: #374151;
+      background: #131a23;
+    }
+    body.mobile-only .text-panel-controls {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      gap: 8px;
+    }
+    body.mobile-only .text-panel-controls::-webkit-scrollbar { display: none; }
+    body.mobile-only .ctrl-group {
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: #18202a;
+      border: 1px solid #2a3644;
+      flex-shrink: 0;
+    }
+    body.mobile-only .ctrl-group label { color: #9ca3af; }
+    body.mobile-only .ctrl-group select {
+      border-color: #3a4a5f;
+      background: #101722;
+    }
+    body.mobile-only .ctrl-group input[type="range"] { width: 128px; }
+    body.mobile-only .ctrl-group .size-val { color: #d1d5db; }
   </style>
 </head>
-<body>
+<body class="mobile-only">
 
 <header>
   <div class="header-left">
@@ -451,6 +690,10 @@
   </div>
 
   <div class="panel preview-panel" id="preview-panel">
+    <div class="preview-topbar">
+      <span>미리보기</span>
+      <button id="preview-close-btn" onclick="hidePreview()">편집으로</button>
+    </div>
     <span class="panel-label">미리보기</span>
     <div id="canvas-scale-wrap-preview">
       <img id="preview-img" alt="미리보기" />
@@ -468,8 +711,10 @@
 <!-- ── Bottom bar: 제목 + 설명 항상 표시 ── -->
 <div id="bottom-bar">
   <div id="mobile-tabs">
-    <button class="mob-tab active" onclick="switchMobileTab('title')">제목</button>
-    <button class="mob-tab" onclick="switchMobileTab('desc')">설명</button>
+    <button class="mob-tab active" data-type="title" onclick="switchMobileTab('title')">제목</button>
+    <button class="mob-tab" data-type="desc" onclick="switchMobileTab('desc')">설명</button>
+    <button class="mob-tab-utility" id="text-top-btn" onclick="moveTextToTop()">텍스트 앞으로</button>
+    <button class="mob-tab mob-tab-collapse" id="mob-collapse-btn" onclick="toggleMobileEditorCollapse()">패널 접기</button>
   </div>
 
   <!-- 제목 패널 -->
@@ -551,12 +796,24 @@
   let isRestoringState = false;
   let mobileViewScale = 1;
   let touchGesture = null;
+  let isMobileEditorCollapsed = false;
 
   const FORMATS = {
     story: { w: 360, h: 640 },
     feed:  { w: 500, h: 500 },
   };
   const STORAGE_KEY = 'photointext.editorState.v1';
+  function isMobileUiMode() {
+    return window.innerWidth < 768 || document.body.classList.contains('mobile-only');
+  }
+
+  fabric.Object.prototype.transparentCorners = false;
+  fabric.Object.prototype.cornerStyle = 'circle';
+  fabric.Object.prototype.cornerColor = '#4f46e5';
+  fabric.Object.prototype.borderColor = '#4f46e5';
+  fabric.Object.prototype.cornerSize = 14;
+  fabric.Object.prototype.touchCornerSize = 30;
+  fabric.Object.prototype.padding = 6;
 
   function updateFormatToggleUI() {
     document.getElementById('btn-story').classList.toggle('active', format === 'story');
@@ -585,6 +842,7 @@
       titleSize: document.getElementById('title-size').value,
       descSize: document.getElementById('desc-size').value,
       guidesVisible,
+      mobileCollapsed: isMobileEditorCollapsed,
     };
   }
 
@@ -598,6 +856,7 @@
     if (ui.titleSize) document.getElementById('title-size').value = ui.titleSize;
     if (ui.descSize) document.getElementById('desc-size').value = ui.descSize;
     guidesVisible = Boolean(ui.guidesVisible);
+    isMobileEditorCollapsed = Boolean(ui.mobileCollapsed);
     updateGuideButton();
     setSizeControlLabels();
   }
@@ -664,7 +923,8 @@
       document.getElementById('placeholder').style.display = imageObjs.length ? 'none' : 'flex';
       hidePreview();
       scaleCanvasForMobile();
-      if (window.innerWidth < 768) switchMobileTab('title');
+      if (isMobileUiMode()) switchMobileTab('title');
+      setMobileEditorCollapsed(isMobileEditorCollapsed);
       canvas.requestRenderAll();
       isRestoringState = false;
     });
@@ -691,9 +951,12 @@
       renderLayerPanel();
       scheduleAutoSave();
     });
-    canvas.on('object:added', () => {
+    canvas.on('object:added', (e) => {
       if (isRestoringState) return;
       syncObjectRefs();
+      if (e && e.target && e.target.type === 'image') {
+        bringTextToFront();
+      }
       renderLayerPanel();
       scheduleAutoSave();
     });
@@ -1138,6 +1401,11 @@
   function applyDescStyle()  { rebuildContent('desc');  }
 
   // ─── Preview ──────────────────────────────────────────────
+  function setMobilePreviewMode(active) {
+    const on = Boolean(active) && isMobileUiMode();
+    document.body.classList.toggle('mobile-preview-mode', on);
+  }
+
   function renderPreview() {
     const dataURL = exportCanvasDataURL();
     const img = document.getElementById('preview-img');
@@ -1148,11 +1416,19 @@
 
     document.getElementById('preview-panel').classList.add('visible');
     document.getElementById('download-btn').classList.add('visible');
+
+    if (isMobileUiMode()) {
+      setMobilePreviewMode(true);
+      requestAnimationFrame(() => {
+        document.getElementById('preview-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
   }
 
   function hidePreview() {
     document.getElementById('preview-panel').classList.remove('visible');
     document.getElementById('download-btn').classList.remove('visible');
+    setMobilePreviewMode(false);
   }
 
   // ─── Download ─────────────────────────────────────────────
@@ -1223,13 +1499,66 @@
     previewWrap.style.height = scaledH + 'px';
   }
 
+  function setMobileEditorCollapsed(collapsed) {
+    isMobileEditorCollapsed = collapsed;
+    const bottomBar = document.getElementById('bottom-bar');
+    const btn = document.getElementById('mob-collapse-btn');
+    const isMobile = isMobileUiMode();
+
+    if (!isMobile) {
+      document.body.classList.remove('mobile-editor-collapsed');
+      bottomBar.classList.remove('mobile-collapsed');
+      if (btn) btn.textContent = '패널 접기';
+      return;
+    }
+
+    document.body.classList.toggle('mobile-editor-collapsed', collapsed);
+    bottomBar.classList.toggle('mobile-collapsed', collapsed);
+    if (btn) btn.textContent = collapsed ? '패널 열기' : '패널 접기';
+  }
+
+  function toggleMobileEditorCollapse() {
+    setMobileEditorCollapsed(!isMobileEditorCollapsed);
+  }
+
+  function bindMobileInputFocusExpand() {
+    ['title-input', 'desc-input'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('focus', () => {
+        if (isMobileUiMode() && isMobileEditorCollapsed) {
+          setMobileEditorCollapsed(false);
+        }
+      });
+    });
+  }
+
+  function moveTextToTop() {
+    const titleInput = document.getElementById('title-input').value.trim();
+    const descInput = document.getElementById('desc-input').value.trim();
+
+    if (!titleObj && titleInput) rebuildContent('title');
+    if (!descObj && descInput) rebuildContent('desc');
+    if (!titleObj && !descObj) return;
+
+    const target = titleObj || descObj;
+    if (target) canvas.setActiveObject(target);
+    // 위치는 유지하고, 텍스트 레이어만 사진보다 앞으로 올린다.
+    bringTextToFront();
+    canvas.requestRenderAll();
+    hidePreview();
+    scheduleAutoSave();
+  }
+
   // ─── 모바일 탭 전환 ───────────────────────────────────────
   function switchMobileTab(type) {
-    document.querySelectorAll('.mob-tab').forEach(btn => {
-      btn.classList.toggle('active', btn.textContent.includes(type === 'title' ? '제목' : '설명'));
+    document.querySelectorAll('.mob-tab[data-type]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.type === type);
     });
     document.getElementById('panel-title').classList.toggle('mob-active', type === 'title');
     document.getElementById('panel-desc').classList.toggle('mob-active',  type === 'desc');
+    if (isMobileUiMode() && isMobileEditorCollapsed) {
+      setMobileEditorCollapsed(false);
+    }
   }
 
   // ─── 초기화 ──────────────────────────────────────────────
@@ -1237,6 +1566,7 @@
     if (!confirm('모든 내용을 초기화할까요?')) return;
     format = 'story';
     guidesVisible = false;
+    isMobileEditorCollapsed = false;
     updateFormatToggleUI();
     updateGuideButton();
     document.getElementById('title-input').value = '';
@@ -1246,7 +1576,8 @@
     document.getElementById('placeholder').style.display = 'flex';
     initCanvas();
     scaleCanvasForMobile();
-    if (window.innerWidth < 768) switchMobileTab('title');
+    if (isMobileUiMode()) switchMobileTab('title');
+    setMobileEditorCollapsed(isMobileEditorCollapsed);
     scheduleAutoSave();
   }
 
@@ -1254,15 +1585,20 @@
   updateFormatToggleUI();
   updateGuideButton();
   setSizeControlLabels();
+  bindMobileInputFocusExpand();
 
   if (!restoreEditorState()) {
     initCanvas();
     scaleCanvasForMobile();
-    if (window.innerWidth < 768) switchMobileTab('title');
+    if (isMobileUiMode()) switchMobileTab('title');
+    setMobileEditorCollapsed(isMobileEditorCollapsed);
   }
 
   window.addEventListener('beforeunload', () => saveEditorState());
-  window.addEventListener('resize', () => { scaleCanvasForMobile(); });
+  window.addEventListener('resize', () => {
+    scaleCanvasForMobile();
+    setMobileEditorCollapsed(isMobileEditorCollapsed);
+  });
 
   // 모바일: 캔버스 위 터치 드래그 시 페이지 스크롤 방지
   document.getElementById('canvas-scale-wrap').addEventListener('touchmove', e => {
